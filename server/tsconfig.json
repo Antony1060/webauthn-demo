@@ -1,0 +1,13 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "lib": ["es2020"],
+        "target": "ES6",
+        "downlevelIteration": true,
+        "moduleResolution": "node",
+        "strict": true
+    },
+    "exclude": ["node_modules"]
+}
