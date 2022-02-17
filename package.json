@@ -13,6 +13,8 @@
         "start-dev": "concurrently --kill-others -n client,server \"yarn workspace client start\" \"yarn workspace server dev\""
     },
     "devDependencies": {
-        "concurrently": "^7.0.0"
+        "concurrently": "^7.0.0",
+        "crypto-browserify": "^3.12.0",
+        "stream-browserify": "^3.0.0"
     }
 }

@@ -5,6 +5,7 @@
     "repository": "https://github.com/Antony1060/webauthn-demo.git",
     "author": "Antony1060 <antoniostignjedec@gmail.com>",
     "license": "GPL-3.0",
+    "private": "true",
     "scripts": {
         "start": "ts-node src/app.ts",
         "dev": "ts-node-dev src/app.ts"

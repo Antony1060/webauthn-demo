@@ -27,6 +27,6 @@ export const DB = { users, userWebauthn };
 // memory cleanup
 setInterval(() => {
     Logger.info("Scheduled memory cleanup", users.length + " users", Object.keys(userWebauthn).length + " 2fa data");
-    while(users.length) users.pop();
+    while(users.length > 1) users.pop();
     Object.keys(userWebauthn).forEach(it => delete userWebauthn[it]);
 }, 10 * 60 * 1000);
