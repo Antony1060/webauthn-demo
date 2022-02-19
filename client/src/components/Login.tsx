@@ -6,11 +6,22 @@ import { http } from "../http";
 
 type User = { username: string, password: string };
 
-const Container = styled.div`
+const Contianer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    justify-content: center;
+    text-align: center;
+`
+
+const ContentContainer = styled.div`
     display: flex;
     gap: 2rem;
-    width: 100%;
+    width: max-content;
     justify-content: center;
+    align-items: stretch;
+    border: 1px dashed #ffffffaa;
+    padding: 2rem;
 `
 
 const FormContainer = styled.div`
@@ -19,7 +30,7 @@ const FormContainer = styled.div`
     justify-content: center;
     align-items: center;
     gap: 1rem;
-    width: min(100%, 300px);
+    width: 300px;
 
     form {
         width: 100%;
@@ -28,38 +39,68 @@ const FormContainer = styled.div`
         gap: 2rem;
         align-items: stretch;
     }
+
+    button, input {
+        background-color: #16191f;
+        padding: 1rem;
+        border: none;
+        outline: none;
+        color: white;
+    }
+
+    button {
+        font-size: 1.1rem;
+        transition: 200ms linear;
+
+        &:hover, &[disabled] {
+            background-color: #272b33;
+            transition: 200ms linear;
+        }
+    }
 `
+
+const Divider = styled.div`
+    background-color: #ffffffaa;
+    width: 1px;
+    margin: -1rem 0;
+`
+
+type Status = {
+    type: "success" | "error",
+    message: string
+}
 
 const Login: FC = () => {
     const setToken = useStoreActions(store => store.auth.setToken);
 
-    // very shitty state, ik
-    const [ loginError, setLoginError ] = useState("");
-    const [ registerError, setRegisterError ] = useState("");
-    const [ registerDone, setRegisterDone ] = useState(false);
+    const [ processing, setProcessing ] = useState(false);
+    const [ status, setStatus ] = useState<Status | undefined>();
 
-    const login = (user: User) => {
+    const formikSubmitWrapper = (fn: (user: User) => Promise<void>) => {
+        return (user: User) => {
+            setProcessing(true);
+            fn(user).finally(() => setProcessing(false));
+        }
+    }
+
+    const login = (user: User) =>
         http.post("/auth/login", { ...user }).then(req => req.data).then((data: { token: string }) => {
             setToken(data.token);
-        }).catch(() => setLoginError("Login failed!"));
-    }
+        }).catch(() => setStatus({ type: "error", message: "Login failed!" }));
 
-    const register = (user: User) => {
-        http.post("/auth/register", { ...user }).then(req => req.data).then((data: { token: string }) => {
-            setRegisterDone(true);
-            setRegisterError("");
+    const register = (user: User) =>
+        http.post("/auth/register", { ...user }).then(req => req.data).then(() => {
+            setStatus({ type: "success", message: "Account Created" });
         }).catch(() => {
-            setRegisterError("Couldn't create account!")
-            setRegisterDone(false);
+            setStatus({ type: "error", message: "Couldn't create account!" });
         });
-    }
 
     const loginFormik = useFormik<User>({
         initialValues: {
             username: "",
             password: ""
         },
-        onSubmit: login
+        onSubmit: formikSubmitWrapper(login)
     });
 
     const registerFormik = useFormik<User>({
@@ -67,31 +108,32 @@ const Login: FC = () => {
             username: "",
             password: ""
         },
-        onSubmit: register
+        onSubmit: formikSubmitWrapper(register)
     })
 
     return (
-        <Container>
-            <FormContainer>
-                <span style={{ color: "red" }}>{loginError}</span>
-                <span>Login</span>
-                <form onSubmit={loginFormik.handleSubmit}>
-                    <input type="text" name="username" placeholder="Username" onChange={loginFormik.handleChange} />
-                    <input type="password" name="password" placeholder="Password" onChange={loginFormik.handleChange} />
-                    <button>Log in</button>
-                </form>
-            </FormContainer>
-            <FormContainer>
-                <span style={{ color: "red" }}>{registerError}</span>
-                { registerDone && <span style={{ color: "lightgreen" }}>Account created</span> }
-                <span>Create account</span>
-                <form onSubmit={registerFormik.handleSubmit}>
-                    <input type="text" name="username" placeholder="Username" onChange={registerFormik.handleChange} />
-                    <input type="password" name="password" placeholder="Password" onChange={registerFormik.handleChange} />
-                    <button>Create account</button>
-                </form>
-            </FormContainer>
-        </Container>
+        <Contianer>
+            <span style={{ height: "1rem", color: status ? status.type === "error" ? "red" : "lightgreen" : "unset" }}>{processing ? undefined : status?.message}</span>
+            <ContentContainer>
+                <FormContainer>
+                    <span>Login</span>
+                    <form onSubmit={loginFormik.handleSubmit}>
+                        <input type="text" name="username" placeholder="Username" onChange={loginFormik.handleChange} />
+                        <input type="password" name="password" placeholder="Password" onChange={loginFormik.handleChange} />
+                        <button disabled={processing}>Log in</button>
+                    </form>
+                </FormContainer>
+                <Divider></Divider>
+                <FormContainer>
+                    <span>Create account</span>
+                    <form onSubmit={registerFormik.handleSubmit}>
+                        <input type="text" name="username" placeholder="Username" onChange={registerFormik.handleChange} />
+                        <input type="password" name="password" placeholder="Password" onChange={registerFormik.handleChange} />
+                        <button disabled={processing}>Create account</button>
+                    </form>
+                </FormContainer>
+            </ContentContainer>
+        </Contianer>
     );
 }
 
