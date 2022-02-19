@@ -30,7 +30,7 @@ export const useAuth = async (req: AuthenticatedRequest, res: Response, next: Ne
     const token = auth.slice("Bearer ".length);
     const validated = validateToken(token);
     if(!validated)
-        return res.status(403).end();
+        return res.status(401).end();
 
     req.user = validated;
     next();

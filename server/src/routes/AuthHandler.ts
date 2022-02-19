@@ -2,10 +2,11 @@ import { Router } from "express";
 import { sign } from "jsonwebtoken";
 import { DB } from "../DB";
 import { hasAll } from "../lib/util";
+import { Assertion, WebAuthN } from "../lib/WebAuthN";
 
 const AuthHandler = Router();
 
-AuthHandler.post("/login", (req, res) => {
+AuthHandler.post("/login", async (req, res) => {
     const body = req.body;
     if(!hasAll(body, "username", "password"))
         return res.status(400).end();
@@ -13,6 +14,25 @@ AuthHandler.post("/login", (req, res) => {
     const user = DB.users.find(it => it.username === body.username);
     if(!user || user.password !== body.password)
         return res.status(403).end();
+    
+    const webauthn = DB.userWebauthn[user.username];
+    if(webauthn) {
+        if(!req.body.assertion)
+            return res.status(400).setHeader("Content-Type", "text/plain").end("webauthn required");
+        
+        const assertion: Assertion = {
+            rawId: req.body.assertion.rawId ?? "",
+            response: {
+                authenticatorData: req.body.assertion.response.authenticatorData ?? "",
+                clientDataJSON: req.body.assertion.response.clientDataJSON ?? "",
+                signature: req.body.assertion.response.signature ?? ""
+            }
+        }
+
+        const success = await WebAuthN.verifyAssertion(user, assertion, webauthn);
+        if(!success)
+            return res.status(403).end();
+    }
 
     res.status(200).json({
         token: sign({ username: user.username }, "verySecureIKnow")

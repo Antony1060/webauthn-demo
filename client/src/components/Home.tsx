@@ -14,6 +14,7 @@ const Container = styled.div`
     gap: 2rem;
     font-size: 1.4rem;
     text-align: center;
+    max-width: 100%;
 `
 
 const ButtonContainer = styled.div`
@@ -27,7 +28,7 @@ const CredentialsContainer = styled.div`
     display: flex;
     padding: 1rem;
     flex-direction: column;
-    min-width: calc(100% - 1rem);
+    max-width: calc(100%);
     width: 600px;
     text-align: start;
     gap: 2rem;
