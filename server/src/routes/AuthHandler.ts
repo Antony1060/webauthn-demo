@@ -7,13 +7,13 @@ const AuthHandler = Router();
 AuthHandler.post("/login", (req, res) => {
     const body = req.body;
     if(!hasAll(body, "username", "password"))
-        return res.status(400);
+        return res.status(400).end();
     
     const user = DB.users.find(it => it.username === body.username);
     if(!user || user.password !== body.password)
-        return res.status(403);
+        return res.status(403).end();
 
-    res.status(200);
+    res.status(200).end();
 });
 
 AuthHandler.post("/register", (req, res) => {
