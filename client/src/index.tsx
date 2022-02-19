@@ -14,12 +14,30 @@ const GlobalStyle = createGlobalStyle`
         box-sizing: border-box;
     }
 
+    body {
+        background-color: #0a0d13;
+    }
+
     span, p {
         color: white;
     }
 
-    body {
-        background-color: #0a0d13;
+    button, input {
+        background-color: #16191f;
+        padding: 1rem;
+        border: none;
+        outline: none;
+        color: white;
+    }
+
+    button {
+        font-size: 1.1rem;
+        transition: 200ms linear;
+
+        &:hover, &[disabled] {
+            background-color: #272b33;
+            transition: 200ms linear;
+        }
     }
 `
 

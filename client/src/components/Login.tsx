@@ -17,11 +17,16 @@ const Contianer = styled.div`
 const ContentContainer = styled.div`
     display: flex;
     gap: 2rem;
-    width: max-content;
     justify-content: center;
     align-items: stretch;
     border: 1px dashed #ffffffaa;
     padding: 2rem;
+
+    @media (max-width: 800px) {
+        flex-direction: column;
+        align-items: center;
+        justify-content: stretch;
+    }
 `
 
 const FormContainer = styled.div`
@@ -39,30 +44,18 @@ const FormContainer = styled.div`
         gap: 2rem;
         align-items: stretch;
     }
-
-    button, input {
-        background-color: #16191f;
-        padding: 1rem;
-        border: none;
-        outline: none;
-        color: white;
-    }
-
-    button {
-        font-size: 1.1rem;
-        transition: 200ms linear;
-
-        &:hover, &[disabled] {
-            background-color: #272b33;
-            transition: 200ms linear;
-        }
-    }
 `
 
 const Divider = styled.div`
     background-color: #ffffffaa;
     width: 1px;
     margin: -1rem 0;
+
+    @media (max-width: 800px) {
+        height: 1px;
+        margin: 0;
+        width: calc(100% + 2rem);
+    }
 `
 
 type Status = {
