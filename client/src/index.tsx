@@ -33,10 +33,15 @@ const GlobalStyle = createGlobalStyle`
     button {
         font-size: 1.1rem;
         transition: 200ms linear;
+        cursor: pointer;
 
         &:hover, &[disabled] {
             background-color: #272b33;
             transition: 200ms linear;
+        }
+
+        &[disabled] {
+            cursor: default;
         }
     }
 `

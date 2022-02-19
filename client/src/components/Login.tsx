@@ -106,7 +106,7 @@ const Login: FC = () => {
 
     return (
         <Contianer>
-            <span style={{ height: "1rem", color: status ? status.type === "error" ? "red" : "lightgreen" : "unset" }}>{processing ? undefined : status?.message}</span>
+            <span style={{ height: "1rem", color: status ? status.type === "error" ? "#ff7d7d" : "lightgreen" : "unset" }}>{processing ? undefined : status?.message}</span>
             <ContentContainer>
                 <FormContainer>
                     <span>Login</span>

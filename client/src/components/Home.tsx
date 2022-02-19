@@ -12,6 +12,13 @@ const Container = styled.div`
     font-size: 1.4rem;
 `
 
+const ButtonContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+`
+
 const Home: FC = () => {
     const { username } = useAuth();
 
@@ -24,7 +31,11 @@ const Home: FC = () => {
     return (
         <Container>
             <span>Hi {username}</span>
-            <button onClick={logout}>Logout</button>
+            <ButtonContainer>
+                <button style={{ backgroundColor: "#c44d4d" }} onClick={logout}>Logout</button>
+                <button>Set up WebauthN</button>
+                <button disabled>Set up Passwordless</button>
+            </ButtonContainer>
         </Container>
     );
 }
