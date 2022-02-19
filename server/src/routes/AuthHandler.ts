@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { sign } from "jsonwebtoken";
 import { DB } from "../DB";
-import { hasAll } from "../util/util";
+import { hasAll } from "../lib/util";
 
 const AuthHandler = Router();
 

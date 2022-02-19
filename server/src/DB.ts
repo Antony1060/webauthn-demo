@@ -1,13 +1,13 @@
 // database mimic, use an actual database please(lvkdotsh/scyllo *wink* *wink*)
 
-import { Logger } from "./util/logger";
+import { Logger } from "./lib/logger";
 
-type User = {
+export type User = {
     username: string,
     password: string // hash this in actual app, this is not actual app
 }
 
-type UserWebauthn = {
+export type UserWebauthn = {
     publicKey: string,
     credentialId: string
 }
