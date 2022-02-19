@@ -42,6 +42,10 @@ const CredentialsContainer = styled.div`
         font-size: 1rem;
     }
     
+    pre, code {
+        font-family: monospace;
+    }
+
     div {
         display: flex;
         flex-direction: column;
