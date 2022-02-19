@@ -1,8 +1,8 @@
 import { decode } from "jsonwebtoken";
-import { useState } from "react";
+import { useStoreState } from "./state";
 
 export const useAuth = (): { authenticated: boolean, username: string } => {
-    const token = localStorage.getItem("token") ?? "";
+    const token = useStoreState(store => store.auth.token);
 
     const decoded = decode(token) ?? {};
     const username = typeof decoded === "object" ? decoded["username"] ?? "" : "";

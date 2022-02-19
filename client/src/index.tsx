@@ -14,6 +14,10 @@ const GlobalStyle = createGlobalStyle`
         box-sizing: border-box;
     }
 
+    span, p {
+        color: white;
+    }
+
     body {
         background-color: #0a0d13;
     }
