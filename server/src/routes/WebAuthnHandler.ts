@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { DB } from "../DB";
-import { Attenstation, WebAuthN } from "../lib/WebAuthN";
+import { Assertion, Attenstation, WebAuthN } from "../lib/WebAuthN";
 import { AuthenticatedRequest, useAuth } from "../middleware/useAuth";
 
 const WebAuthnHandler = Router()
@@ -38,11 +38,40 @@ WebAuthnHandler.get("/assert/begin", (req, res) => {
     if(!query.username)
         return res.status(400).end();
     
-    const webauthn = DB.userWebauthn[query.username as string];
+    const user = DB.users.find(it => it.username === query.username as string);
+    if(!user)
+        return res.status(400).end();
+
+    const webauthn = DB.userWebauthn[user.username];
     if(!webauthn)
         return res.status(400).end();
 
-    WebAuthN.assert(webauthn).then(it => res.json(it)).catch(() => res.status(400).end());
+
+    WebAuthN.assert(user, webauthn).then(it => res.json(it)).catch(() => res.status(400).end());
+})
+
+WebAuthnHandler.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, res) => {
+    const user = req.user!;
+    const webauthn = DB.userWebauthn[user.username];
+    if(!webauthn)
+        return res.status(400).end()
+
+    const assertion: Assertion = {
+        rawId: req.body.rawId ?? "",
+        response: {
+            authenticatorData: req.body.response.authenticatorData ?? "",
+            clientDataJSON: req.body.response.clientDataJSON ?? "",
+            signature: req.body.response.signature ?? ""
+        }
+    }
+
+    WebAuthN.verifyAssertion(user, assertion, webauthn).then(success => {
+        if(!success)
+            return res.status(400).end();
+
+        delete DB.userWebauthn[user.username];
+        res.status(200).end();
+    })
 })
 
 export { WebAuthnHandler }

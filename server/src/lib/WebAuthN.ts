@@ -68,10 +68,10 @@ export const WebAuthN = {
         return { credentialId: encode(result.clientData.get("rawId")), publicKey: result.authnrData.get("credentialPublicKeyPem") }
     },
 
-    assert: async (auth: UserWebauthn) => {
+    assert: async (user: User, auth: UserWebauthn) => {
         const options = await fido2.assertionOptions();
 
-        return {
+        const encoded = {
             ...options,
             challenge: encode(options.challenge),
             allowCredentials: [{
@@ -79,7 +79,10 @@ export const WebAuthN = {
                 id: auth.credentialId,
                 transports: ["usb", "ble", "nfc"]
             }]
-        }
+        };
+        challenges[user.username] = encoded.challenge;
+
+        return encoded;
     },
 
     verifyAssertion: async (user: User, assertion: Assertion, auth: UserWebauthn): Promise<boolean> => {
@@ -92,11 +95,14 @@ export const WebAuthN = {
             }
         }, {
             challenge: challenges[user.username],
-            origin: process.env.WEBAUTHN_ORIGIN ?? "localhost",
+            origin: process.env.WEBAUTHN_ORIGIN ?? "http://localhost:3000",
             factor: "either",
             publicKey: auth.publicKey,
             prevCounter: 0,
             userHandle: null
-        }).then(() => true).catch(() => false);
+        }).then(() => true).catch((err) => {
+            console.error(err);
+            return false;
+        });
     }
 }
