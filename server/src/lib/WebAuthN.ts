@@ -3,6 +3,7 @@ import { Blob } from "buffer";
 import { Fido2Lib, Fido2LibOptions } from "fido2-lib"
 import { DB, User, UserWebauthn } from "../DB";
 import { Logger } from "./logger";
+import { UniqueId } from "./util";
 
 const opts: Fido2LibOptions = {
     timeout: 30 * 1000,
@@ -37,7 +38,7 @@ export type Assertion = {
     }
 }
 
-const challenges: Record<string, string> = {};
+const challenges: Record<UniqueId, string> = {};
 
 // memory cleanup
 setInterval(() => {
@@ -48,10 +49,10 @@ setInterval(() => {
 export const WebAuthN = {
     attestate: async (user: User, resident = false) => {
         const options = await (resident ? fido2Resident : fido2).attestationOptions();
-        options.user = { id: user.username, name: user.username, displayName: user.username };
+        options.user = { id: user.id, name: user.username, displayName: user.username };
 
         const encoded = { ...options, challenge: encode(options.challenge) }
-        challenges[user.username] = encoded.challenge;
+        challenges[user.id] = encoded.challenge;
 
         return encoded;
     },
@@ -62,7 +63,7 @@ export const WebAuthN = {
             rawId: decode(attestation.rawId)
         }, {
             rpId: opts.rpId,
-            challenge: challenges[user.username],
+            challenge: challenges[user.id],
             origin: process.env.WEBAUTHN_ORIGIN ?? "http://localhost:3000",
             factor: "either"
         });
@@ -82,7 +83,7 @@ export const WebAuthN = {
                 transports: ["usb", "ble", "nfc"]
             }]
         };
-        challenges[user.username] = encoded.challenge;
+        challenges[user.id] = encoded.challenge;
 
         return encoded;
     },
@@ -96,7 +97,7 @@ export const WebAuthN = {
                 authenticatorData: decode(assertion.response.authenticatorData)
             }
         }, {
-            challenge: challenges[user.username],
+            challenge: challenges[user.id],
             origin: process.env.WEBAUTHN_ORIGIN ?? "http://localhost:3000",
             factor: "either",
             publicKey: auth.publicKey,

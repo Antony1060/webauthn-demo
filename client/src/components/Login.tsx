@@ -146,7 +146,25 @@ const Login: FC = () => {
             password: ""
         },
         onSubmit: formikSubmitWrapper(register)
-    })
+    });
+
+    const residentLogin = () => {
+        setProcessing(true);
+        (async () => {
+            const rawAssertion = await http.get("/webauthn/resident/assert/begin").then(res => res.data as PublicKeyCredentialRequestOptions);
+            const assertion = decodeAssertion(rawAssertion);
+            const credential = await navigator.credentials.get({ publicKey: assertion });
+            if(!credential)
+                return setStatus({ type: "error", message: "Login failed" });
+
+            await http.post("/auth/login/resident", { challenge: rawAssertion.challenge, ...encodeAssertResponse(credential as PublicKeyCredential) })
+                    .then(res => res.data)
+                    .then((data: { token: string }) => {
+                        setToken(data.token);
+                    })
+                    .catch(() => setStatus({ type: "error", message: "Login failed" }));
+        })().finally(() => setProcessing(false));
+    }
 
     return (
         <Contianer>
@@ -176,7 +194,7 @@ const Login: FC = () => {
                 <HorizontalDivider />
             </DividerContainer>
             <ContentContainer>
-                <Button disabled={processing} style={{ width: "100%" }}>Usernameless + Passwordless login</Button>
+                <Button disabled={processing} onClick={residentLogin} style={{ width: "100%" }}>Usernameless + Passwordless login</Button>
             </ContentContainer>
         </Contianer>
     );

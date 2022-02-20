@@ -7,7 +7,7 @@ import { AuthenticatedRequest, useAuth } from "../middleware/useAuth";
 const WebAuthnHandler = Router()
 
 WebAuthnHandler.get("/", useAuth, (req: AuthenticatedRequest, res) => {
-    const webauthn = DB.userWebauthn[req.user!.username];
+    const webauthn = DB.userWebauthn[req.user!.id];
     if(!webauthn)
         return res.status(404).end();
 
@@ -29,7 +29,7 @@ WebAuthnHandler.post("/attestate/end", useAuth, (req: AuthenticatedRequest, res)
 
     const user = req.user!;
     WebAuthN.verifyAttestation(user, attestation).then(it => {
-        DB.userWebauthn[user.username] = it;
+        DB.userWebauthn[user.id] = it;
         res.json(it);
     }).catch((it) => res.status(400).end(it.message));
 })
@@ -43,17 +43,16 @@ WebAuthnHandler.get("/assert/begin", (req, res) => {
     if(!user)
         return res.status(400).end();
 
-    const webauthn = DB.userWebauthn[user.username];
+    const webauthn = DB.userWebauthn[user.id];
     if(!webauthn)
         return res.status(400).end();
-
 
     WebAuthN.assert(user, webauthn).then(it => res.json(it)).catch(() => res.status(400).end());
 })
 
 WebAuthnHandler.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, res) => {
     const user = req.user!;
-    const webauthn = DB.userWebauthn[user.username];
+    const webauthn = DB.userWebauthn[user.id];
     if(!webauthn)
         return res.status(400).end()
 
@@ -70,7 +69,7 @@ WebAuthnHandler.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, 
         if(!success)
             return res.status(400).end();
 
-        delete DB.userWebauthn[user.username];
+        delete DB.userWebauthn[user.id];
         res.status(200).end();
     })
 });
@@ -82,7 +81,7 @@ WebAuthnHandler.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, 
 
 WebAuthnHandler.use("/resident", ((router: Router) => {
     router.get("/", useAuth, (req: AuthenticatedRequest, res) => {
-        const webauthn = DB.residentWebauthn[req.user!.username];
+        const webauthn = DB.residentWebauthn[req.user!.id];
         if(!webauthn)
             return res.status(404).end();
     
@@ -104,31 +103,18 @@ WebAuthnHandler.use("/resident", ((router: Router) => {
     
         const user = req.user!;
         WebAuthN.verifyAttestation(user, attestation, true).then(it => {
-            DB.residentWebauthn[user.username] = it;
+            DB.residentWebauthn[user.id] = it;
             res.json(it);
         }).catch((it) => res.status(400).end(it.message));
     });
     
     router.get("/assert/begin", (req, res) => {
-        const query = req.query;
-        if(!query.username)
-            return res.status(400).end();
-        
-        const user = DB.users.find(it => it.username === query.username as string);
-        if(!user)
-            return res.status(400).end();
-    
-        const webauthn = DB.residentWebauthn[user.username];
-        if(!webauthn)
-            return res.status(400).end();
-    
-    
         WebAuthN.assertResident().then(it => res.json(it)).catch(() => res.status(400).end());
     })
     
     router.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, res) => {
         const user = req.user!;
-        const webauthn = DB.residentWebauthn[user.username];
+        const webauthn = DB.residentWebauthn[user.id];
         if(!req.body.challenge || !webauthn)
             return res.status(400).end()
     
@@ -145,7 +131,7 @@ WebAuthnHandler.use("/resident", ((router: Router) => {
             if(!success)
                 return res.status(400).end();
     
-            delete DB.residentWebauthn[user.username];
+            delete DB.residentWebauthn[user.id];
             res.status(200).end();
         })
     });

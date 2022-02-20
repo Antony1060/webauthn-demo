@@ -14,10 +14,10 @@ const validateToken = (token?: string): User | undefined => {
         return;
     }
 
-    if(typeof jwt === "string" || !jwt.username)
+    if(typeof jwt === "string" || !jwt.username || !jwt.user_id)
         return;
 
-    const user = DB.users.find(it => it.username === (jwt as JwtPayload).username);
+    const user = DB.users.find(it => it.id === (jwt as JwtPayload).user_id);
     return user;
 }
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { sign } from "jsonwebtoken";
 import { DB } from "../DB";
-import { hasAll } from "../lib/util";
+import { generateUniqueId, hasAll } from "../lib/util";
 import { Assertion, WebAuthN } from "../lib/WebAuthN";
 
 const AuthHandler = Router();
@@ -15,7 +15,7 @@ AuthHandler.post("/login", async (req, res) => {
     if(!user || user.password !== body.password)
         return res.status(403).end();
     
-    const webauthn = DB.userWebauthn[user.username];
+    const webauthn = DB.userWebauthn[user.id];
     if(webauthn) {
         if(!req.body.assertion)
             return res.status(400).setHeader("Content-Type", "text/plain").end("webauthn required");
@@ -35,8 +35,40 @@ AuthHandler.post("/login", async (req, res) => {
     }
 
     res.status(200).json({
-        token: sign({ username: user.username }, "verySecureIKnow")
+        token: sign({ user_id: user.id, username: user.username }, "verySecureIKnow")
     });
+});
+
+AuthHandler.post("/login/resident", (req, res) => {
+    if(!req.body.challenge || !req.body.response.userHandle)
+        return res.status(400).end();
+
+    const userId = req.body.response.userHandle as string;
+    const user = DB.users.find(it => it.id === userId);
+    if(!user)
+        return res.status(400).end();
+    
+    const webauthn = DB.residentWebauthn[user.id];
+    if(!webauthn)
+        return res.status(400).end();
+
+    const assertion: Assertion = {
+        rawId: req.body.rawId ?? "",
+        response: {
+            authenticatorData: req.body.response.authenticatorData ?? "",
+            clientDataJSON: req.body.response.clientDataJSON ?? "",
+            signature: req.body.response.signature ?? ""
+        }
+    }
+
+    WebAuthN.verifyAssertionResident(req.body.challenge as string, webauthn, assertion).then(success => {
+        if(!success)
+            return res.status(400).end();
+
+        res.status(200).json({
+            token: sign({ user_id: user.id, username: user.username }, "verySecureIKnow")
+        });
+    })
 });
 
 AuthHandler.post("/register", (req, res) => {
@@ -49,7 +81,7 @@ AuthHandler.post("/register", (req, res) => {
         return res.status(400).end();
     
     // body has username and password so we can just spread it here 🥵
-    DB.users.push({ ...body });
+    DB.users.push({ id: generateUniqueId(), ...body });
     res.status(200).end();
 })
 

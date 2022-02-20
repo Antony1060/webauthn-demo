@@ -1,8 +1,10 @@
 // database mimic, use an actual database please(lvkdotsh/scyllo *wink* *wink*)
 
 import { Logger } from "./lib/logger";
+import { generateUniqueId, UniqueId } from "./lib/util";
 
 export type User = {
+    id: UniqueId
     username: string,
     password: string // hash this in actual app, this is not actual app
 }
@@ -14,14 +16,15 @@ export type UserWebauthn = {
 
 const users: User[] = [
     {
+        id: generateUniqueId(),
         username: "demo",
         password: "demo"
     }
 ]
 
 // we're gonna store webauthn data here
-const userWebauthn: Record<string, UserWebauthn> = {};
-const residentWebauthn: Record<string, UserWebauthn> = {};
+const userWebauthn: Record<UniqueId, UserWebauthn> = {};
+const residentWebauthn: Record<UniqueId, UserWebauthn> = {};
 
 export const DB = { users, userWebauthn, residentWebauthn };
 
@@ -30,4 +33,5 @@ setInterval(() => {
     Logger.info("Scheduled memory cleanup", users.length + " users", Object.keys(userWebauthn).length + " 2fa data");
     while(users.length > 1) users.pop();
     Object.keys(userWebauthn).forEach(it => delete userWebauthn[it]);
+    Object.keys(residentWebauthn).forEach(it => delete userWebauthn[it]);
 }, 10 * 60 * 1000);

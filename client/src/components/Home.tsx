@@ -113,7 +113,7 @@ const Home: FC = () => {
     const remove = (resident: boolean) => {
         setProcessing(true);
         (async () => {
-            const rawAssertion = await http.get((resident ? "/webauthn/resident/assert/begin?username=" : "/webauthn/assert/begin?username=") + username).then(res => res.data as PublicKeyCredentialRequestOptions);
+            const rawAssertion = await http.get(resident ? "/webauthn/resident/assert/begin" : "/webauthn/assert/begin?username=" + username).then(res => res.data as PublicKeyCredentialRequestOptions);
             const assertion = decodeAssertion(rawAssertion);
             const credential = await navigator.credentials.get({ publicKey: assertion });
             if(!credential) {
