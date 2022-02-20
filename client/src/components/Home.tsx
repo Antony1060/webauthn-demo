@@ -17,6 +17,7 @@ const Container = styled.div`
     font-size: 1.4rem;
     text-align: center;
     max-width: 100%;
+    padding: 2rem 1rem;
 `
 
 const ButtonContainer = styled.div`
@@ -43,14 +44,6 @@ const CredentialsContainer = styled.div`
         border: 1px solid white;
         overflow: auto;
         font-size: 1rem;
-
-        ::-webkit-scrollbar {
-            background-color: #151a22;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: #272b33;
-        }
     }
     
     pre, code {
@@ -128,7 +121,11 @@ const Home: FC = () => {
                 return;
             }
 
-            await http.post(resident ? "/webauthn/resident/assert/end-remove" : "/webauthn/assert/end-remove", encodeAssertResponse(credential as PublicKeyCredential)).then(() => fetchCredentials())
+            await http.post(resident ?
+                    "/webauthn/resident/assert/end-remove" :
+                    "/webauthn/assert/end-remove", { challenge: rawAssertion.challenge, ...encodeAssertResponse(credential as PublicKeyCredential) }
+                )
+                .then(() => fetchCredentials())
         })().finally(() => setProcessing(false));
     }
 

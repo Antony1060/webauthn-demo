@@ -11,10 +11,17 @@ type User = { username: string, password: string };
 
 const Contianer = styled.div`
     display: flex;
+    gap: 1rem;
     flex-direction: column;
-    gap: 2rem;
     justify-content: center;
     text-align: center;
+    padding: 2rem 1rem;
+`
+
+const Alert = styled.span<{ color: string }>`
+    margin-bottom: 1rem;
+    height: 1rem;
+    color: ${({ color }) => color};
 `
 
 const ContentContainer = styled.div`
@@ -49,7 +56,7 @@ const FormContainer = styled.div`
     }
 `
 
-const Divider = styled.div`
+const VerticalDivider = styled.div`
     background-color: #ffffffaa;
     width: 1px;
     margin: -1rem 0;
@@ -59,6 +66,22 @@ const Divider = styled.div`
         margin: 0;
         width: calc(100% + 2rem);
     }
+`
+
+const DividerContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    span {
+        opacity: 0.8;
+    }
+`
+
+const HorizontalDivider = styled.div`
+    background-color: #ffffffaa;
+    height: 1px;
+    width: 100%;
 `
 
 type Status = {
@@ -127,7 +150,7 @@ const Login: FC = () => {
 
     return (
         <Contianer>
-            <span style={{ height: "1rem", color: status ? status.type === "error" ? "#ff7d7d" : "lightgreen" : "unset" }}>{processing ? undefined : status?.message}</span>
+            <Alert color={status ? status.type === "error" ? "#ff7d7d" : "lightgreen" : "unset"}>{processing ? undefined : status?.message}</Alert>
             <ContentContainer>
                 <FormContainer>
                     <span>Login</span>
@@ -137,7 +160,7 @@ const Login: FC = () => {
                         <Button disabled={processing}>Log in</Button>
                     </form>
                 </FormContainer>
-                <Divider></Divider>
+                <VerticalDivider />
                 <FormContainer>
                     <span>Create account</span>
                     <form onSubmit={registerFormik.handleSubmit}>
@@ -146,6 +169,14 @@ const Login: FC = () => {
                         <Button disabled={processing}>Create account</Button>
                     </form>
                 </FormContainer>
+            </ContentContainer>
+            <DividerContainer>
+                <HorizontalDivider />
+                <span>or</span>
+                <HorizontalDivider />
+            </DividerContainer>
+            <ContentContainer>
+                <Button disabled={processing} style={{ width: "100%" }}>Usernameless + Passwordless login</Button>
             </ContentContainer>
         </Contianer>
     );

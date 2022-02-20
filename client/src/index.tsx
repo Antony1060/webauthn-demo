@@ -12,6 +12,22 @@ const GlobalStyle = createGlobalStyle`
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+
+        ::-webkit-scrollbar {
+            background-color: #151a22;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #272b33;
+        }
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    #root {
+        min-height: 100%;
     }
 
     body {

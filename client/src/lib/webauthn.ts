@@ -1,7 +1,23 @@
 import { decode, encode } from "base64-arraybuffer";
 
-export type TransmittablePublicKeyCredential = Omit<PublicKeyCredential, "rawId" | "response"> & { rawId: string | ArrayBuffer, response: { attestationObject: string | ArrayBuffer, clientDataJSON: string | ArrayBuffer } };
-export type TransmittableAssertCredential = Omit<PublicKeyCredential, "rawId" | "response"> & { rawId: string | ArrayBuffer, response: { authenticatorData: string | ArrayBuffer, clientDataJSON: string | ArrayBuffer, signature: string | ArrayBuffer } };
+export type TransmittablePublicKeyCredential = Omit<PublicKeyCredential, "rawId" | "response"> &
+    {
+        rawId: string | ArrayBuffer,
+        response: {
+            attestationObject: string | ArrayBuffer,
+            clientDataJSON: string | ArrayBuffer
+        }
+    };
+
+export type TransmittableAssertCredential = Omit<PublicKeyCredential, "rawId" | "response"> &
+    { rawId: string | ArrayBuffer,
+        response: {
+            authenticatorData: string | ArrayBuffer,
+            clientDataJSON: string | ArrayBuffer,
+            signature: string | ArrayBuffer,
+            userHandle?: string | ArrayBuffer
+        }
+    };
 
 export const encodeAttestationResponse = (credential: PublicKeyCredential): TransmittablePublicKeyCredential => {
     return {
@@ -17,14 +33,16 @@ export const encodeAttestationResponse = (credential: PublicKeyCredential): Tran
 };
 
 export const encodeAssertResponse = (credential: PublicKeyCredential): TransmittableAssertCredential => {
+    const response = credential.response as { clientDataJSON: ArrayBuffer, authenticatorData: ArrayBuffer, signature: ArrayBuffer, userHandle?: ArrayBuffer }
     return {
         ...credential,
         id: credential.id,
         rawId: encode(credential.rawId),
         response: {
-            authenticatorData: encode((credential.response as { clientDataJSON: ArrayBuffer, authenticatorData: ArrayBuffer }).authenticatorData),
-            clientDataJSON: encode(credential.response.clientDataJSON),
-            signature: encode((credential.response as { clientDataJSON: ArrayBuffer, signature: ArrayBuffer }).signature)
+            authenticatorData: encode(response.authenticatorData),
+            clientDataJSON: encode(response.clientDataJSON),
+            signature: encode(response.signature),
+            userHandle: response.userHandle ? encode(response.userHandle) : undefined
         },
         type: credential.type
     };

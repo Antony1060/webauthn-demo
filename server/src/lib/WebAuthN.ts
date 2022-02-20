@@ -1,6 +1,7 @@
 import { decode, encode } from "base64-arraybuffer";
+import { Blob } from "buffer";
 import { Fido2Lib, Fido2LibOptions } from "fido2-lib"
-import { User, UserWebauthn } from "../DB";
+import { DB, User, UserWebauthn } from "../DB";
 import { Logger } from "./logger";
 
 const opts: Fido2LibOptions = {
@@ -31,7 +32,8 @@ export type Assertion = {
     response: {
         authenticatorData: string,
         clientDataJSON: string,
-        signature: string
+        signature: string,
+        userHandle?: string
     }
 }
 
@@ -68,8 +70,8 @@ export const WebAuthN = {
         return { credentialId: encode(result.clientData.get("rawId")), publicKey: result.authnrData.get("credentialPublicKeyPem") }
     },
 
-    assert: async (user: User, auth: UserWebauthn, resident = false) => {
-        const options = await (resident ? fido2Resident : fido2).assertionOptions();
+    assert: async (user: User, auth: UserWebauthn) => {
+        const options = await fido2.assertionOptions();
 
         const encoded = {
             ...options,
@@ -85,8 +87,8 @@ export const WebAuthN = {
         return encoded;
     },
 
-    verifyAssertion: async (user: User, assertion: Assertion, auth: UserWebauthn, resident = false): Promise<boolean> => {
-        return (resident ? fido2Resident : fido2).assertionResult({
+    verifyAssertion: async (user: User, assertion: Assertion, auth: UserWebauthn): Promise<boolean> => {
+        return fido2.assertionResult({
             ...assertion,
             rawId: decode(assertion.rawId),
             response: {
@@ -100,9 +102,35 @@ export const WebAuthN = {
             publicKey: auth.publicKey,
             prevCounter: 0,
             userHandle: null
-        }).then(() => true).catch((err) => {
-            console.error(err);
-            return false;
-        });
+        }).then(() => true).catch(() => false);
+    },
+
+    assertResident: async () => {
+        const options = await fido2Resident.assertionOptions();
+
+        const encoded = {
+            ...options,
+            challenge: encode(options.challenge)
+        };
+
+        return encoded;
+    },
+
+    verifyAssertionResident: async (challenge: string, auth: UserWebauthn, assertion: Assertion): Promise<boolean> => {
+        return fido2Resident.assertionResult({
+            ...assertion,
+            rawId: decode(assertion.rawId),
+            response: {
+                ...assertion.response,
+                authenticatorData: decode(assertion.response.authenticatorData)
+            }
+        }, {
+            challenge,
+            origin: process.env.WEBAUTHN_ORIGIN ?? "http://localhost:3000",
+            factor: "either",
+            publicKey: auth.publicKey,
+            prevCounter: 0,
+            userHandle: null
+        }).then(() => true).catch(() => false);
     }
 }

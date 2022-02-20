@@ -10,7 +10,14 @@ const Container = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1rem;
+
+    @media (max-height: 600px) {
+        align-items: flex-start;
+    }
+
+    @media (max-width: 800px) {
+        align-items: flex-start;
+    }
 `
 
 const App: FC = () => {

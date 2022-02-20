@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { DB } from "../DB";
+import { hasAll } from "../lib/util";
 import { Assertion, Attenstation, WebAuthN } from "../lib/WebAuthN";
 import { AuthenticatedRequest, useAuth } from "../middleware/useAuth";
 
@@ -122,13 +123,13 @@ WebAuthnHandler.use("/resident", ((router: Router) => {
             return res.status(400).end();
     
     
-        WebAuthN.assert(user, webauthn, true).then(it => res.json(it)).catch(() => res.status(400).end());
+        WebAuthN.assertResident().then(it => res.json(it)).catch(() => res.status(400).end());
     })
     
     router.post("/assert/end-remove", useAuth, (req: AuthenticatedRequest, res) => {
         const user = req.user!;
         const webauthn = DB.residentWebauthn[user.username];
-        if(!webauthn)
+        if(!req.body.challenge || !webauthn)
             return res.status(400).end()
     
         const assertion: Assertion = {
@@ -140,7 +141,7 @@ WebAuthnHandler.use("/resident", ((router: Router) => {
             }
         }
     
-        WebAuthN.verifyAssertion(user, assertion, webauthn, true).then(success => {
+        WebAuthN.verifyAssertionResident(req.body.challenge as string, webauthn, assertion).then(success => {
             if(!success)
                 return res.status(400).end();
     
