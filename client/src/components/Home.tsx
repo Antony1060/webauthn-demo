@@ -5,6 +5,8 @@ import { useStoreActions, useStoreState } from "../hooks/state";
 import { useAuth } from "../hooks/useAuth";
 import { http } from "../http";
 import { decodeAssertion, encodeAssertResponse, encodeAttestationResponse } from "../lib/webauthn";
+import { Button } from "./elements/Button";
+import FancySwitcher from "./elements/FancySwitcher";
 
 const Container = styled.div`
     display: flex;
@@ -55,16 +57,16 @@ const CredentialsContainer = styled.div`
         font-family: monospace;
     }
 
-    div {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-    }
-
     span.warning {
         font-size: 1.3rem;
         text-align: center;
     }
+`
+
+const BoxContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 `
 
 export type UserWebauthn = {
@@ -139,43 +141,45 @@ const Home: FC = () => {
         <Container>
             <span>Hi {username}</span>
             <CredentialsContainer>
-                <button onClick={() => setSlide(it => it === "resident" ? "normal" : "resident")}>{slide === "normal" ? "R" : "N"}</button>
+                <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+                    <FancySwitcher options={["normal", "resident"]} onChange={setSlide} />
+                </div>
                 {slide === "normal" ?
                     !credentials ? <span className="warning">WebAuthN not set up</span> :
                     <>
-                        <div>
+                        <BoxContainer>
                             <span>Credential ID</span>
                             <pre>{credentials.credentialId}</pre>
-                        </div>
+                        </BoxContainer>
 
-                        <div>
+                        <BoxContainer>
                             <span>Public Key</span>
                             <pre>
                                 <code>{credentials.publicKey}</code>
                             </pre>
-                        </div>
+                        </BoxContainer>
                     </>
                 :
                     !residentCredentials ? <span className="warning">Resident keys not set up</span> :
                     <>
-                        <div>
+                        <BoxContainer>
                             <span>Credential ID</span>
                             <pre>{residentCredentials.credentialId}</pre>
-                        </div>
+                        </BoxContainer>
 
-                        <div>
+                        <BoxContainer>
                             <span>Public Key</span>
                             <pre>
                                 <code>{residentCredentials.publicKey}</code>
                             </pre>
-                        </div>
+                        </BoxContainer>
                     </>
                 }
             </CredentialsContainer>
             <ButtonContainer>
-                <button style={{ backgroundColor: "#c44d4d" }} onClick={logout}>Logout</button>
-                <button onClick={credentials ? () => remove(false) : () => setUp(false)} disabled={processing}>{ credentials ? "Remove WebAuthN" : "Set up WebAuthN" }</button>
-                <button onClick={residentCredentials ? () => remove(true) : () => setUp(true)} disabled={processing}>{ residentCredentials ? "Remove Passwordless" : "Set up Passwordless"}</button>
+                <Button style={{ backgroundColor: "#c44d4d" }} onClick={logout}>Logout</Button>
+                <Button onClick={credentials ? () => remove(false) : () => setUp(false)} disabled={processing}>{ credentials ? "Remove WebAuthN" : "Set up WebAuthN" }</Button>
+                <Button onClick={residentCredentials ? () => remove(true) : () => setUp(true)} disabled={processing}>{ residentCredentials ? "Remove Passwordless" : "Set up Passwordless"}</Button>
             </ButtonContainer>
         </Container>
     );

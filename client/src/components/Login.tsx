@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { useStoreActions } from "../hooks/state";
 import { http } from "../http";
 import { decodeAssertion, encodeAssertResponse } from "../lib/webauthn";
+import { Button } from "./elements/Button";
 
 type User = { username: string, password: string };
 
@@ -133,7 +134,7 @@ const Login: FC = () => {
                     <form onSubmit={loginFormik.handleSubmit}>
                         <input type="text" name="username" placeholder="Username" onChange={loginFormik.handleChange} />
                         <input type="password" name="password" placeholder="Password" onChange={loginFormik.handleChange} />
-                        <button disabled={processing}>Log in</button>
+                        <Button disabled={processing}>Log in</Button>
                     </form>
                 </FormContainer>
                 <Divider></Divider>
@@ -142,7 +143,7 @@ const Login: FC = () => {
                     <form onSubmit={registerFormik.handleSubmit}>
                         <input type="text" name="username" placeholder="Username" onChange={registerFormik.handleChange} />
                         <input type="password" name="password" placeholder="Password" onChange={registerFormik.handleChange} />
-                        <button disabled={processing}>Create account</button>
+                        <Button disabled={processing}>Create account</Button>
                     </form>
                 </FormContainer>
             </ContentContainer>
