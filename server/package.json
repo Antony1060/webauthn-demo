@@ -20,7 +20,7 @@
         "chalk": "4",
         "cors": "^2.8.5",
         "express": "^4.17.2",
-        "fido2-lib": "^2.8.1",
+        "fido2-lib": "https://github.com/efabris/fido2-lib#extension_support",
         "jsonwebtoken": "^8.5.1",
         "ts-node": "^10.5.0",
         "ts-node-dev": "^1.1.8",

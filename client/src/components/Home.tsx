@@ -41,6 +41,14 @@ const CredentialsContainer = styled.div`
         border: 1px solid white;
         overflow: auto;
         font-size: 1rem;
+
+        ::-webkit-scrollbar {
+            background-color: #151a22;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #272b33;
+        }
     }
     
     pre, code {
@@ -51,6 +59,11 @@ const CredentialsContainer = styled.div`
         display: flex;
         flex-direction: column;
         gap: 0.4rem;
+    }
+
+    span.warning {
+        font-size: 1.3rem;
+        text-align: center;
     }
 `
 
@@ -63,7 +76,9 @@ const Home: FC = () => {
     const { username } = useAuth();
 
     const [ processing, setProcessing ] = useState(false);
+    const [ slide, setSlide ] = useState<"resident" | "normal">("normal");
     const [ credentials, setCredentials ] = useState<UserWebauthn | undefined>();
+    const [ residentCredentials, setResidentCredentials ] = useState<UserWebauthn | undefined>();
 
     const setToken = useStoreActions(store => store.auth.setToken);
 
@@ -72,14 +87,19 @@ const Home: FC = () => {
     }
 
     const fetchCredentials = async () =>
-        http.get("/webauthn").then(res => res.data).then((data: UserWebauthn)  => {
-            setCredentials(data);
-        }).catch(() => setCredentials(undefined))
+        Promise.all([
+            http.get("/webauthn").then(res => res.data).then((data: UserWebauthn) => {
+                setCredentials(data);
+            }).catch(() => setCredentials(undefined)),
+            http.get("/webauthn/resident").then(res => res.data).then((data: UserWebauthn) => {
+                setResidentCredentials(data);
+            }).catch(() => setResidentCredentials(undefined))
+        ])
 
-    const setUp = () => {
+    const setUp = (resident: boolean) => {
         setProcessing(true);
         (async () => {
-            const attestation = await http.get("/webauthn/attestate/begin").then(res => res.data as PublicKeyCredentialCreationOptions);
+            const attestation = await http.get(resident ? "/webauthn/resident/attestate/begin" : "/webauthn/attestate/begin").then(res => res.data as PublicKeyCredentialCreationOptions);
             attestation.challenge = decode(attestation.challenge as unknown as string);
             attestation.user.id = decode(attestation.user.id as unknown as string);
 
@@ -89,16 +109,16 @@ const Home: FC = () => {
                 return;
             }
 
-            await http.post("/webauthn/attestate/end", encodeAttestationResponse(credential as PublicKeyCredential)).then(res => res.data).then((data: UserWebauthn) => {
-                setCredentials(data);
+            await http.post(resident ? "/webauthn/resident/attestate/end" : "/webauthn/attestate/end", encodeAttestationResponse(credential as PublicKeyCredential)).then(res => res.data).then((data: UserWebauthn) => {
+                resident ? setResidentCredentials(data) : setCredentials(data);
             });
         })().finally(() => setProcessing(false));
     }
 
-    const remove = () => {
+    const remove = (resident: boolean) => {
         setProcessing(true);
         (async () => {
-            const rawAssertion = await http.get("/webauthn/assert/begin?username=" + username).then(res => res.data as PublicKeyCredentialRequestOptions);
+            const rawAssertion = await http.get((resident ? "/webauthn/resident/assert/begin?username=" : "/webauthn/assert/begin?username=") + username).then(res => res.data as PublicKeyCredentialRequestOptions);
             const assertion = decodeAssertion(rawAssertion);
             const credential = await navigator.credentials.get({ publicKey: assertion });
             if(!credential) {
@@ -106,7 +126,7 @@ const Home: FC = () => {
                 return;
             }
 
-            await http.post("/webauthn/assert/end-remove", encodeAssertResponse(credential as PublicKeyCredential)).then(() => fetchCredentials())
+            await http.post(resident ? "/webauthn/resident/assert/end-remove" : "/webauthn/assert/end-remove", encodeAssertResponse(credential as PublicKeyCredential)).then(() => fetchCredentials())
         })().finally(() => setProcessing(false));
     }
 
@@ -118,25 +138,44 @@ const Home: FC = () => {
     return (
         <Container>
             <span>Hi {username}</span>
-            {credentials ? 
-                <CredentialsContainer>
-                    <div>
-                        <span>Credential ID</span>
-                        <pre>{credentials.credentialId}</pre>
-                    </div>
+            <CredentialsContainer>
+                <button onClick={() => setSlide(it => it === "resident" ? "normal" : "resident")}>{slide === "normal" ? "R" : "N"}</button>
+                {slide === "normal" ?
+                    !credentials ? <span className="warning">WebAuthN not set up</span> :
+                    <>
+                        <div>
+                            <span>Credential ID</span>
+                            <pre>{credentials.credentialId}</pre>
+                        </div>
 
-                    <div>
-                        <span>Public Key</span>
-                        <pre>
-                            <code>{credentials.publicKey}</code>
-                        </pre>
-                    </div>
-                </CredentialsContainer>
-            : <span>WebAuthN not set up</span>}
+                        <div>
+                            <span>Public Key</span>
+                            <pre>
+                                <code>{credentials.publicKey}</code>
+                            </pre>
+                        </div>
+                    </>
+                :
+                    !residentCredentials ? <span className="warning">Resident keys not set up</span> :
+                    <>
+                        <div>
+                            <span>Credential ID</span>
+                            <pre>{residentCredentials.credentialId}</pre>
+                        </div>
+
+                        <div>
+                            <span>Public Key</span>
+                            <pre>
+                                <code>{residentCredentials.publicKey}</code>
+                            </pre>
+                        </div>
+                    </>
+                }
+            </CredentialsContainer>
             <ButtonContainer>
                 <button style={{ backgroundColor: "#c44d4d" }} onClick={logout}>Logout</button>
-                <button onClick={credentials ? remove : setUp} disabled={processing}>{ credentials ? "Remove WebAuthN" : "Set up WebAuthN" }</button>
-                <button disabled>Set up Passwordless</button>
+                <button onClick={credentials ? () => remove(false) : () => setUp(false)} disabled={processing}>{ credentials ? "Remove WebAuthN" : "Set up WebAuthN" }</button>
+                <button onClick={residentCredentials ? () => remove(true) : () => setUp(true)} disabled={processing}>{ residentCredentials ? "Remove Passwordless" : "Set up Passwordless"}</button>
             </ButtonContainer>
         </Container>
     );

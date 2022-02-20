@@ -12,11 +12,11 @@ const opts: Fido2LibOptions = {
     attestation: "direct",
     cryptoParams: [-7, -257],
     authenticatorAttachment: "cross-platform",
-    authenticatorRequireResidentKey: false,
     authenticatorUserVerification: "discouraged"
 }
 
-const fido2 = new Fido2Lib(opts);
+const fido2 = new Fido2Lib({ ...opts, authenticatorRequireResidentKey: false });
+const fido2Resident = new Fido2Lib({ ...opts, authenticatorRequireResidentKey: true });
 
 export type Attenstation = {
     rawId: string,
@@ -44,8 +44,8 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 export const WebAuthN = {
-    attestate: async (user: User) => {
-        const options = await fido2.attestationOptions();
+    attestate: async (user: User, resident = false) => {
+        const options = await (resident ? fido2Resident : fido2).attestationOptions();
         options.user = { id: user.username, name: user.username, displayName: user.username };
 
         const encoded = { ...options, challenge: encode(options.challenge) }
@@ -54,8 +54,8 @@ export const WebAuthN = {
         return encoded;
     },
 
-    verifyAttestation: async (user: User, attestation: Attenstation): Promise<UserWebauthn> => {
-        const result = await fido2.attestationResult({
+    verifyAttestation: async (user: User, attestation: Attenstation, resident = false): Promise<UserWebauthn> => {
+        const result = await (resident ? fido2Resident : fido2).attestationResult({
             ...attestation,
             rawId: decode(attestation.rawId)
         }, {
@@ -68,8 +68,8 @@ export const WebAuthN = {
         return { credentialId: encode(result.clientData.get("rawId")), publicKey: result.authnrData.get("credentialPublicKeyPem") }
     },
 
-    assert: async (user: User, auth: UserWebauthn) => {
-        const options = await fido2.assertionOptions();
+    assert: async (user: User, auth: UserWebauthn, resident = false) => {
+        const options = await (resident ? fido2Resident : fido2).assertionOptions();
 
         const encoded = {
             ...options,
@@ -85,8 +85,8 @@ export const WebAuthN = {
         return encoded;
     },
 
-    verifyAssertion: async (user: User, assertion: Assertion, auth: UserWebauthn): Promise<boolean> => {
-        return fido2.assertionResult({
+    verifyAssertion: async (user: User, assertion: Assertion, auth: UserWebauthn, resident = false): Promise<boolean> => {
+        return (resident ? fido2Resident : fido2).assertionResult({
             ...assertion,
             rawId: decode(assertion.rawId),
             response: {

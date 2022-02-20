@@ -20,9 +20,10 @@ const users: User[] = [
 ]
 
 // we're gonna store webauthn data here
-const userWebauthn: Record<string, UserWebauthn> = {}
+const userWebauthn: Record<string, UserWebauthn> = {};
+const residentWebauthn: Record<string, UserWebauthn> = {};
 
-export const DB = { users, userWebauthn };
+export const DB = { users, userWebauthn, residentWebauthn };
 
 // memory cleanup
 setInterval(() => {
