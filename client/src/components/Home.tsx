@@ -56,7 +56,7 @@ const CredentialsContainer = styled.div`
     }
 `
 
-const BoxContainer = styled.div`
+const CredentialBoxContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
@@ -71,7 +71,9 @@ const Home: FC = () => {
     const { username } = useAuth();
 
     const [ processing, setProcessing ] = useState(false);
+
     const [ slide, setSlide ] = useState<"resident" | "normal">("normal");
+
     const [ credentials, setCredentials ] = useState<UserWebauthn | undefined>();
     const [ residentCredentials, setResidentCredentials ] = useState<UserWebauthn | undefined>();
 
@@ -96,7 +98,12 @@ const Home: FC = () => {
     const setUp = (resident: boolean) => {
         setProcessing(true);
         (async () => {
-            const attestation = await http.get(resident ? "/webauthn/resident/attestate/begin" : "/webauthn/attestate/begin").then(res => res.data as PublicKeyCredentialCreationOptions);
+            const attestation = await http.get(
+                resident ?
+                    "/webauthn/resident/attestate/begin" :
+                    "/webauthn/attestate/begin"
+            ).then(res => res.data as PublicKeyCredentialCreationOptions);
+            
             attestation.challenge = decode(attestation.challenge as unknown as string);
             attestation.user.id = decode(attestation.user.id as unknown as string);
 
@@ -104,26 +111,35 @@ const Home: FC = () => {
             if(!credential)
                 return setFailed(true);
 
-            await http.post(resident ? "/webauthn/resident/attestate/end" : "/webauthn/attestate/end", encodeAttestationResponse(credential as PublicKeyCredential)).then(res => res.data).then((data: UserWebauthn) => {
-                resident ? setResidentCredentials(data) : setCredentials(data);
-            });
+            await http.post(
+                resident ?
+                    "/webauthn/resident/attestate/end" :
+                    "/webauthn/attestate/end",
+                encodeAttestationResponse(credential as PublicKeyCredential)
+            ).then(res => res.data).then((data: UserWebauthn) => resident ? setResidentCredentials(data) : setCredentials(data));
         })().finally(() => setProcessing(false));
     }
 
     const remove = (resident: boolean) => {
         setProcessing(true);
         (async () => {
-            const rawAssertion = await http.get(resident ? "/webauthn/resident/assert/begin" : "/webauthn/assert/begin?username=" + username).then(res => res.data as PublicKeyCredentialRequestOptions);
+            const rawAssertion = await http.get(
+                resident ?
+                    "/webauthn/resident/assert/begin" :
+                    "/webauthn/assert/begin?username=" + username
+            ).then(res => res.data as PublicKeyCredentialRequestOptions);
+
             const assertion = decodeAssertion(rawAssertion);
             const credential: MaybeCredential = await navigator.credentials.get({ publicKey: assertion }).catch(() => false);
             if(!credential)
                 return setFailed(true);
 
-            await http.post(resident ?
+            await http.post(
+                resident ?
                     "/webauthn/resident/assert/end-remove" :
-                    "/webauthn/assert/end-remove", { challenge: rawAssertion.challenge, ...encodeAssertResponse(credential as PublicKeyCredential) }
-                )
-                .then(() => fetchCredentials())
+                    "/webauthn/assert/end-remove",
+                { challenge: rawAssertion.challenge, ...encodeAssertResponse(credential as PublicKeyCredential) }
+            ).then(() => fetchCredentials())
         })().finally(() => setProcessing(false));
     }
 
@@ -135,7 +151,30 @@ const Home: FC = () => {
     useEffect(() => {
         if(processing === true)
             setFailed(false)
-    }, [processing])
+    }, [processing]);
+
+    const renderCredentials = (slide: "normal" | "resident") => {
+        const creds = slide === "normal" ? credentials : residentCredentials;
+
+        if(!creds)
+            return <span className="warning">{slide === "normal" ? "WebAuthN not set up" : "Resident keys not set up"}</span>
+
+        return (
+            <>
+                <CredentialBoxContainer>
+                    <span>Credential ID</span>
+                    <pre>{creds.credentialId}</pre>
+                </CredentialBoxContainer>
+
+                <CredentialBoxContainer>
+                    <span>Public Key</span>
+                    <pre>
+                        <code>{creds.publicKey}</code>
+                    </pre>
+                </CredentialBoxContainer>
+            </>
+        )
+    }
 
     return (
         <Container>
@@ -145,37 +184,7 @@ const Home: FC = () => {
                     <FancySwitcher options={["normal", "resident"]} onChange={setSlide} />
                 </div>
                 {failed && <span style={{ textAlign: "center", color: "#ff7d7d" }}>Failed to auth</span>}
-                {slide === "normal" ?
-                    !credentials ? <span className="warning">WebAuthN not set up</span> :
-                    <>
-                        <BoxContainer>
-                            <span>Credential ID</span>
-                            <pre>{credentials.credentialId}</pre>
-                        </BoxContainer>
-
-                        <BoxContainer>
-                            <span>Public Key</span>
-                            <pre>
-                                <code>{credentials.publicKey}</code>
-                            </pre>
-                        </BoxContainer>
-                    </>
-                :
-                    !residentCredentials ? <span className="warning">Resident keys not set up</span> :
-                    <>
-                        <BoxContainer>
-                            <span>Credential ID</span>
-                            <pre>{residentCredentials.credentialId}</pre>
-                        </BoxContainer>
-
-                        <BoxContainer>
-                            <span>Public Key</span>
-                            <pre>
-                                <code>{residentCredentials.publicKey}</code>
-                            </pre>
-                        </BoxContainer>
-                    </>
-                }
+                {renderCredentials(slide)}
             </CredentialsContainer>
             <ButtonContainer>
                 <Button style={{ backgroundColor: "#c44d4d" }} onClick={logout}>Logout</Button>
