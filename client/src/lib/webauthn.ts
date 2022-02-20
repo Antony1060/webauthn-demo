@@ -1,5 +1,7 @@
 import { decode, encode } from "base64-arraybuffer";
 
+export type MaybeCredential = Credential | false | null;
+
 export type TransmittablePublicKeyCredential = Omit<PublicKeyCredential, "rawId" | "response"> &
     {
         rawId: string | ArrayBuffer,

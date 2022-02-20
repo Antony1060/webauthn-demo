@@ -4,7 +4,7 @@ import { FC, useState } from "react";
 import styled from "styled-components";
 import { useStoreActions } from "../hooks/state";
 import { http } from "../http";
-import { decodeAssertion, encodeAssertResponse } from "../lib/webauthn";
+import { decodeAssertion, encodeAssertResponse, MaybeCredential } from "../lib/webauthn";
 import { Button } from "./elements/Button";
 
 type User = { username: string, password: string };
@@ -113,7 +113,7 @@ const Login: FC = () => {
 
         const rawAssertion = await http.get("/webauthn/assert/begin?username=" + user.username).then(res => res.data as PublicKeyCredentialRequestOptions);
         const assertion = decodeAssertion(rawAssertion);
-        const credential = await navigator.credentials.get({ publicKey: assertion });
+        const credential: MaybeCredential = await navigator.credentials.get({ publicKey: assertion }).catch(() => false);
         if(!credential)
             return setStatus({ type: "error", message: "Login failed" });
 
@@ -153,7 +153,7 @@ const Login: FC = () => {
         (async () => {
             const rawAssertion = await http.get("/webauthn/resident/assert/begin").then(res => res.data as PublicKeyCredentialRequestOptions);
             const assertion = decodeAssertion(rawAssertion);
-            const credential = await navigator.credentials.get({ publicKey: assertion });
+            const credential: MaybeCredential = await navigator.credentials.get({ publicKey: assertion }).catch(() => false);
             if(!credential)
                 return setStatus({ type: "error", message: "Login failed" });
 

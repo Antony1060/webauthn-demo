@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { useStoreActions, useStoreState } from "../hooks/state";
 import { useAuth } from "../hooks/useAuth";
 import { http } from "../http";
-import { decodeAssertion, encodeAssertResponse, encodeAttestationResponse } from "../lib/webauthn";
+import { decodeAssertion, encodeAssertResponse, encodeAttestationResponse, MaybeCredential } from "../lib/webauthn";
 import { Button } from "./elements/Button";
 import FancySwitcher from "./elements/FancySwitcher";
 
@@ -75,6 +75,8 @@ const Home: FC = () => {
     const [ credentials, setCredentials ] = useState<UserWebauthn | undefined>();
     const [ residentCredentials, setResidentCredentials ] = useState<UserWebauthn | undefined>();
 
+    const [ failed, setFailed ] = useState(false);
+
     const setToken = useStoreActions(store => store.auth.setToken);
 
     const logout = () => {
@@ -98,11 +100,9 @@ const Home: FC = () => {
             attestation.challenge = decode(attestation.challenge as unknown as string);
             attestation.user.id = decode(attestation.user.id as unknown as string);
 
-            const credential = await navigator.credentials.create({ publicKey: attestation });
-            if(!credential) {
-                // TODO: display some error
-                return;
-            }
+            const credential: MaybeCredential = await navigator.credentials.create({ publicKey: attestation }).catch(() => false);
+            if(!credential)
+                return setFailed(true);
 
             await http.post(resident ? "/webauthn/resident/attestate/end" : "/webauthn/attestate/end", encodeAttestationResponse(credential as PublicKeyCredential)).then(res => res.data).then((data: UserWebauthn) => {
                 resident ? setResidentCredentials(data) : setCredentials(data);
@@ -115,11 +115,9 @@ const Home: FC = () => {
         (async () => {
             const rawAssertion = await http.get(resident ? "/webauthn/resident/assert/begin" : "/webauthn/assert/begin?username=" + username).then(res => res.data as PublicKeyCredentialRequestOptions);
             const assertion = decodeAssertion(rawAssertion);
-            const credential = await navigator.credentials.get({ publicKey: assertion });
-            if(!credential) {
-                // TODO: display some error
-                return;
-            }
+            const credential: MaybeCredential = await navigator.credentials.get({ publicKey: assertion }).catch(() => false);
+            if(!credential)
+                return setFailed(true);
 
             await http.post(resident ?
                     "/webauthn/resident/assert/end-remove" :
@@ -134,6 +132,11 @@ const Home: FC = () => {
         fetchCredentials().finally(() => setProcessing(false));
     }, []);
 
+    useEffect(() => {
+        if(processing === true)
+            setFailed(false)
+    }, [processing])
+
     return (
         <Container>
             <span>Hi {username}</span>
@@ -141,6 +144,7 @@ const Home: FC = () => {
                 <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
                     <FancySwitcher options={["normal", "resident"]} onChange={setSlide} />
                 </div>
+                {failed && <span style={{ textAlign: "center", color: "#ff7d7d" }}>Failed to auth</span>}
                 {slide === "normal" ?
                     !credentials ? <span className="warning">WebAuthN not set up</span> :
                     <>
