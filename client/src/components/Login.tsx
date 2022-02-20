@@ -93,7 +93,7 @@ const Login: FC = () => {
     const setToken = useStoreActions(store => store.auth.setToken);
 
     const [ processing, setProcessing ] = useState(false);
-    const [ status, setStatus ] = useState<Status | undefined>();
+    const [ status, setStatus ] = useState<Status | undefined>({ type: "error", message: "Note: Accounts and their data are deleted every 10 minutes." });
 
     const formikSubmitWrapper = (fn: (user: User) => Promise<void>) => {
         return (user: User) => {
